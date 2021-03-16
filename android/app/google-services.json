@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1070014272590",
+    "firebase_url": "https://sight-7ddbb-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "sight-7ddbb",
+    "storage_bucket": "sight-7ddbb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070014272590:android:eaa55b0ab90c280c925f1f",
+        "android_client_info": {
+          "package_name": "com.spp.sight"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1070014272590-34lfh9ln883290iqc2vq2ck1jhtkh0h5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEj6SiQ34JiAs3w-wtNsJNyQOnrIKj-RI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1070014272590-34lfh9ln883290iqc2vq2ck1jhtkh0h5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
