@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,20 +10,13 @@ import 'listen.dart';
 
 class Home extends StatefulWidget {
   final String path;
+  final String text;
 
-  Home({this.path});
+  Home({this.path, this.text});
 
   @override
   _HomeState createState() => _HomeState();
 }
-
-const languages = const [
-  const Language('English', 'en_US'),
-  const Language('Francais', 'fr_FR'),
-  const Language('Pусский', 'ru_RU'),
-  const Language('Italiano', 'it_IT'),
-  const Language('Español', 'es_ES'),
-];
 
 class _HomeState extends State<Home> {
   var dbRef;
@@ -152,23 +144,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    DatabaseReference dbRef =
-        FirebaseDatabase.instance.reference().child(widget.path);
-
-    return StreamBuilder(
-      stream: dbRef.onValue,
-      builder: (context, snap) {
-        if (snap.hasData &&
-            !snap.hasError &&
-            snap.data.snapshot.value != null) {
-          Map data = snap.data.snapshot.value;
-
-          _speak(data['name'] + data['distance'].toString() + 'meters');
-
-          return SizedBox.shrink();
-        } else
-          return SizedBox.shrink();
-      },
-    );
+    _speak(widget.text);
+    return SizedBox.shrink();
   }
 }
