@@ -1,21 +1,38 @@
-import 'dart:async';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io';
+
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:sight/language.dart';
 
-class MyApp extends StatefulWidget {
+import 'listen.dart';
+
+class Home extends StatefulWidget {
+  final String path;
+
+  Home({this.path});
+
   @override
-  _MyAppState createState() => _MyAppState();
+  _HomeState createState() => _HomeState();
 }
 
-enum TtsState { playing, stopped, paused, continued }
+const languages = const [
+  const Language('English', 'en_US'),
+  const Language('Francais', 'fr_FR'),
+  const Language('Pусский', 'ru_RU'),
+  const Language('Italiano', 'it_IT'),
+  const Language('Español', 'es_ES'),
+];
 
-class _MyAppState extends State<MyApp> {
+class _HomeState extends State<Home> {
+  var dbRef;
+
   FlutterTts flutterTts;
   String language;
-  double volume = 0.8;
-  double pitch = 1.0;
+  double volume = 0.5;
+  double pitch = 0.8;
   double rate = 0.7;
   bool isCurrentLanguageInstalled = false;
 
@@ -36,7 +53,7 @@ class _MyAppState extends State<MyApp> {
   bool get isWeb => kIsWeb;
 
   @override
-  initState() {
+  void initState() {
     super.initState();
     initTts();
   }
@@ -135,27 +152,23 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Column(children: [
-              Center(
-                child: FloatingActionButton(
-                  onPressed: () {
-                    _speak('who are you nebunule ce dracu te tampesti asa ');
-                  },
-                ),
-              ),
-              Center(
-                child: FloatingActionButton(
-                  onPressed: () {
-                    _stop();
-                  },
-                ),
-              )
-            ])),
-      ),
+    DatabaseReference dbRef =
+        FirebaseDatabase.instance.reference().child(widget.path);
+
+    return StreamBuilder(
+      stream: dbRef.onValue,
+      builder: (context, snap) {
+        if (snap.hasData &&
+            !snap.hasError &&
+            snap.data.snapshot.value != null) {
+          Map data = snap.data.snapshot.value;
+
+          _speak(data['name'] + data['distance'].toString() + 'meters');
+
+          return Scaffold();
+        } else
+          return Text("No data");
+      },
     );
   }
 }

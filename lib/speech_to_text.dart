@@ -57,46 +57,15 @@ class _SpeechToTextState extends State<SpeechToText> {
   Widget build(BuildContext context) {
     return new MaterialApp(
       home: new Scaffold(
-        appBar: new AppBar(
-          title: new Text('SpeechRecognition'),
-          actions: [
-            new PopupMenuButton<Language>(
-              onSelected: _selectLangHandler,
-              itemBuilder: (BuildContext context) => _buildLanguagesWidgets,
-            )
-          ],
+        body: new Center(
+          child: _buildButton(
+            onPressed: _speechRecognitionAvailable && !_isListening
+                ? () => start()
+                : null,
+            label:
+                _isListening ? 'Listening...' : 'Listen (${selectedLang.code})',
+          ),
         ),
-        body: new Padding(
-            padding: new EdgeInsets.all(8.0),
-            child: new Center(
-              child: new Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  new Expanded(
-                      child: new Container(
-                          padding: const EdgeInsets.all(8.0),
-                          color: Colors.grey.shade200,
-                          child: new Text(transcription))),
-                  _buildButton(
-                    onPressed: _speechRecognitionAvailable && !_isListening
-                        ? () => start()
-                        : null,
-                    label: _isListening
-                        ? 'Listening...'
-                        : 'Listen (${selectedLang.code})',
-                  ),
-                  _buildButton(
-                    onPressed: _isListening ? () => cancel() : null,
-                    label: 'Cancel',
-                  ),
-                  _buildButton(
-                    onPressed: _isListening ? () => stop() : null,
-                    label: 'Stop',
-                  ),
-                ],
-              ),
-            )),
       ),
     );
   }
@@ -113,14 +82,29 @@ class _SpeechToTextState extends State<SpeechToText> {
     setState(() => selectedLang = lang);
   }
 
-  Widget _buildButton({String label, VoidCallback onPressed}) => new Padding(
-      padding: new EdgeInsets.all(12.0),
-      child: new RaisedButton(
-        color: Colors.cyan.shade600,
-        onPressed: onPressed,
-        child: new Text(
-          label,
-          style: const TextStyle(color: Colors.white),
+  Widget _buildButton({String label, VoidCallback onPressed}) => new InkWell(
+      onTap: onPressed,
+      child: new Container(
+        color: Colors.green,
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                size: 70,
+                color: Colors.white,
+              ),
+              Text(
+                "Tap to Listen",
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 50.0,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ));
 
@@ -130,6 +114,7 @@ class _SpeechToTextState extends State<SpeechToText> {
           setState(() {
             _isListening = result;
           });
+
         });
       });
 
@@ -165,3 +150,12 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   void errorHandler() => activateSpeechRecognizer();
 }
+
+//_buildButton(
+//onPressed: _isListening ? () => cancel() : null,
+//label: 'Cancel',
+//),
+//_buildButton(
+//onPressed: _isListening ? () => stop() : null,
+//label: 'Stop',
+//),
