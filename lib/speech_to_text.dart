@@ -4,10 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:geocoder/geocoder.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:vibration/vibration.dart';
 import 'listen.dart';
 
-//  available languages
 const languages = const [
   const Language('English', 'en_US'),
   const Language('Francais', 'fr_FR'),
@@ -37,8 +38,10 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   bool _speechRecognitionAvailable = false;
   bool _isListening = false;
-  bool _isSpeaking = false;
   bool _needsToSpeak = false;
+  String setting;
+  String newSetting;
+  Position _position;
 
   FlutterTts flutterTts;
   String language;
@@ -68,6 +71,26 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   //String _currentLocale = 'en_US';
   Language selectedLang = languages.first;
+
+  Coordinates coordinates;
+
+  _getLocation(double lat, double long) async {
+    Position position = await Geolocator()
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+    final coordinates = new Coordinates(position.latitude, position.longitude);
+    print(coordinates);
+    double dist = await Geolocator().distanceBetween(
+        lat, long, coordinates.latitude, coordinates.longitude);
+    print("dist : $dist");
+    return (dist);
+  }
+
+  Future<dynamic> calculateDistance(
+      double lat, double long, Coordinates myCoordinates) async {
+    double dist = await Geolocator().distanceBetween(
+        lat, long, myCoordinates.latitude, myCoordinates.longitude);
+    return (dist);
+  }
 
   @override
   initState() {
@@ -152,9 +175,11 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
-  Future _chooseToSpeak(String text, bool _needsSpeaking) async {
-    if (_needsSpeaking == true) {
-      _speak(text);
+  Future _chooseToSpeak(String text, bool needsToSpeak) async {
+    if (needsToSpeak == true) {
+      if (_isListening == false) {
+        _speak(text);
+      }
     } else {
       _stop();
     }
@@ -165,10 +190,10 @@ class _SpeechToTextState extends State<SpeechToText> {
     if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
 
-  Future _pause() async {
-    var result = await flutterTts.pause();
-    if (result == 1) setState(() => ttsState = TtsState.paused);
-  }
+//  Future _pause() async {
+//    var result = await flutterTts.pause();
+//    if (result == 1) setState(() => ttsState = TtsState.paused);
+//  }
 
   @override
   void dispose() {
@@ -194,6 +219,10 @@ class _SpeechToTextState extends State<SpeechToText> {
   Widget build(BuildContext context) {
     DatabaseReference dbRef =
         FirebaseDatabase.instance.reference().child(widget.path);
+    DatabaseReference locationRef =
+        FirebaseDatabase.instance.reference().child('locations');
+
+    renderCommands(transcription);
 
     return StreamBuilder(
       stream: dbRef.onValue,
@@ -203,17 +232,17 @@ class _SpeechToTextState extends State<SpeechToText> {
             snap.data.snapshot.value != null) {
           Map data = snap.data.snapshot.value;
 
-          if (chooseAction(transcription) == 'start') {
-            _speak(data['name'] + data['distance'].toString() + 'meters');
-          }
+          _chooseToSpeak(data['name'] + data['distance'].toString() + 'meters',
+              _needsToSpeak);
+
           return new Scaffold(
               body: _buildButton(
             onPressed: () {
               if (_speechRecognitionAvailable && !_isListening) {
-                Vibration.vibrate(pattern: [100, 500, 100, 500]);
+//                Vibration.vibrate(pattern: [100, 500, 100, 500]);
                 start();
               } else {
-                Vibration.vibrate(pattern: [100, 100, 100, 100]);
+//                Vibration.vibrate(pattern: [100, 100, 100, 100]);
                 stop();
               }
             },
@@ -291,6 +320,7 @@ class _SpeechToTextState extends State<SpeechToText> {
   void start() => _speech.activate(selectedLang.code).then((_) {
         return _speech.listen().then((result) {
           print('_SpeechToTextState.start => result $result');
+          _stop();
           setState(() {
             _isListening = result;
           });
@@ -319,7 +349,11 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   void onRecognitionResult(String text) {
     print('_SpeechToTextState.onRecognitionResult... $text');
-    setState(() => transcription = text);
+    if (setting != null) {
+      setState(() => newSetting = text);
+    } else {
+      setState(() => transcription = text);
+    }
   }
 
   void onRecognitionComplete(String text) {
@@ -329,56 +363,99 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   void errorHandler() => activateSpeechRecognizer();
 
-  String chooseAction(String text) {
-    switch (text) {
-      case 'start':
-      case 'start system':
-      case 'run':
-        return 'start';
-        break;
-      case 'stop':
-      case 'stop system':
-      case 'cancel':
-        break;
-      case 'start':
-        break;
-      case 'stop':
-        break;
-      case 'start':
-        break;
-      case 'stop':
-        break;
-      case 'start':
-        break;
-      case 'stop':
-        break;
-      case 'start':
-        break;
-      case 'stop':
-        break;
-      case 'start':
-        break;
-      case 'stop':
-        break;
+  String correctString(String value) {
+    switch (value) {
+      case 'zero':
+        return '0';
+      case 'one':
+        return '1';
+      case 'two':
+        return '2';
+      default:
+        return value;
+    }
+  }
+
+  void changePitch(String pitchValue) {
+    pitchValue = correctString(pitchValue);
+    setState(() {
+      _needsToSpeak = false;
+      pitch = double.parse(pitchValue);
+    });
+  }
+
+  void changeRate(String rateValue) {
+    rateValue = correctString(rateValue);
+    setState(() {
+      _needsToSpeak = false;
+      rate = double.parse(rateValue);
+    });
+  }
+
+  void changeVolume(String volumeValue) {
+    volumeValue = correctString(volumeValue);
+    setState(() {
+      _needsToSpeak = false;
+      volume = double.parse(volumeValue);
+    });
+  }
+
+  //todo
+  dynamic chooseAction(String text) {
+    List<String> words = text.split(' ');
+    if (words.length == 1) {
+      switch (text) {
+        case 'start':
+        case 'run':
+          return 'start';
+          break;
+        case 'stop':
+        case 'cancel':
+          return 'stop';
+          break;
+        case 'location':
+          {
+            _getLocation(45, 23);
+
+            break;
+          }
+        default:
+          return null;
+          break;
+      }
+    } else if (words.length > 1) {
+      List<dynamic> settings;
+      switch (words[0]) {
+        case 'beach':
+          changePitch(words[words.length - 1]);
+          break;
+        case 'rate':
+        case 'speed':
+          changeRate(words[words.length - 1]);
+          break;
+        case 'volume':
+          changeVolume(words[words.length - 1]);
+          break;
+        case 'language':
+          changeVolume(words[words.length - 1]);
+          break;
+        default:
+          return null;
+          break;
+      }
     }
   }
 
   void renderCommands(String text) {
     switch (chooseAction(text)) {
       case 'start':
-        {
-          setState(() => _needsToSpeak = true);
-          break;
-        }
+        setState(() => _needsToSpeak = true);
+        break;
+      case 'stop':
+        setState(() => _needsToSpeak = false);
+        break;
+      default:
+        break;
     }
-
-//_buildButton(
-//onPressed: _isListening ? () => cancel() : null,
-//label: 'Cancel',
-//),
-//_buildButton(
-//onPressed: _isListening ? () => stop() : null,
-//label: 'Stop',
-//),
   }
 }
