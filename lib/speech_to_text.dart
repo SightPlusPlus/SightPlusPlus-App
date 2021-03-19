@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
@@ -6,15 +7,12 @@ import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sight/convert_coordinates.dart';
+import 'package:sight/loading.dart';
 import 'package:vibration/vibration.dart';
-import 'listen.dart';
 
 const languages = const [
   const Language('English', 'en_US'),
-  const Language('Francais', 'fr_FR'),
-  const Language('Pусский', 'ru_RU'),
-  const Language('Italiano', 'it_IT'),
-  const Language('Español', 'es_ES'),
 ];
 
 class Language {
@@ -33,24 +31,26 @@ class SpeechToText extends StatefulWidget {
   _SpeechToTextState createState() => new _SpeechToTextState();
 }
 
+enum TtsState { playing, stopped, paused, continued }
+
 class _SpeechToTextState extends State<SpeechToText> {
   SpeechRecognition _speech;
-
   bool _speechRecognitionAvailable = false;
   bool _isListening = false;
   bool _needsToSpeak = false;
-  String setting;
-  String newSetting;
-  double minDistance = double.infinity;
-  String locationSelected;
 
   FlutterTts flutterTts;
   String language;
   double volume = 0.5;
   double pitch = 0.8;
-  double rate = 0.7;
+  double speed = 0.7;
 
-  bool isCurrentLanguageInstalled = false;
+  String setting;
+  String newSetting;
+
+  double minDistance = double.infinity;
+  String locationSelected;
+  Coordinates coordinates;
 
   TtsState ttsState = TtsState.stopped;
 
@@ -68,36 +68,9 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   bool get isWeb => kIsWeb;
 
+  Language selectedLang = Language('English', 'en_US');
+
   String transcription = '';
-
-  //String _currentLocale = 'en_US';
-  Language selectedLang = languages.first;
-
-  Coordinates coordinates;
-
-  _getLocation() async {
-    Position position = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
-    setState(() {
-      coordinates = new Coordinates(position.latitude, position.longitude);
-    });
-  }
-
-  Future<dynamic> _calculateDistance(
-      double lat, double long, Coordinates myCoordinates) async {
-    if (myCoordinates != null) {
-      double dist = await Geolocator().distanceBetween(
-          lat, long, myCoordinates.latitude, myCoordinates.longitude);
-      return (dist);
-    }
-  }
-
-  @override
-  initState() {
-    super.initState();
-    activateSpeechRecognizer();
-    initTts();
-  }
 
   initTts() {
     flutterTts = FlutterTts();
@@ -151,8 +124,6 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  Future<dynamic> _getLanguages() => flutterTts.getLanguages;
-
   Future _getEngines() async {
     var engines = await flutterTts.getEngines;
     if (engines != null) {
@@ -162,9 +133,26 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
+  _getLocation() async {
+    Position position = await Geolocator()
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+    setState(() {
+      coordinates = new Coordinates(position.latitude, position.longitude);
+    });
+  }
+
+  Future<dynamic> _calculateDistance(
+      double lat, double long, Coordinates myCoordinates) async {
+    if (myCoordinates != null) {
+      double dist = await Geolocator().distanceBetween(
+          lat, long, myCoordinates.latitude, myCoordinates.longitude);
+      return (dist);
+    }
+  }
+
   Future _speak(String text) async {
     await flutterTts.setVolume(volume);
-    await flutterTts.setSpeechRate(rate);
+    await flutterTts.setSpeechRate(speed);
     await flutterTts.setPitch(pitch);
 
     if (text != null) {
@@ -178,16 +166,26 @@ class _SpeechToTextState extends State<SpeechToText> {
   Future _chooseToSpeak(Map data, bool needsToSpeak) async {
     if (needsToSpeak == true) {
       if (_isListening == false) {
+        if (data['priority'] == '4') {
+          Vibration.vibrate(pattern: [200, 50, 200, 50, 200, 50]);
+        }
         _speak(data['message']);
       }
     } else {
-      _stop();
+      _stopSpeak();
     }
   }
 
-  Future _stop() async {
+  Future _stopSpeak() async {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  @override
+  initState() {
+    super.initState();
+    activateSpeechRecognizer();
+    initTts();
   }
 
   @override
@@ -196,7 +194,7 @@ class _SpeechToTextState extends State<SpeechToText> {
     flutterTts.stop();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
+// Platform messages are asynchronous, so we initialize in an async method.
   void activateSpeechRecognizer() {
     print('_SpeechToTextState.activateSpeechRecognizer... ');
     _speech = new SpeechRecognition();
@@ -210,64 +208,7 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    DatabaseReference dbRef;
-
-    if (locationSelected == null) {
-      dbRef = FirebaseDatabase.instance.reference().child(widget.path);
-    } else {
-      dbRef = FirebaseDatabase.instance
-          .reference()
-          .child('locations/' + locationSelected);
-    }
-    renderCommands(transcription);
-
-    return StreamBuilder(
-      stream: dbRef.onValue,
-      builder: (context, snap) {
-        if (snap.hasData &&
-            !snap.hasError &&
-            snap.data.snapshot.value != null) {
-          Map data = snap.data.snapshot.value;
-          print('......... $data');
-
-          _chooseToSpeak(data, _needsToSpeak);
-
-          return new Scaffold(
-              body: _buildButton(
-            onPressed: () {
-              _getLocation();
-              if (_speechRecognitionAvailable && !_isListening) {
-//                Vibration.vibrate(pattern: [100, 500, 100, 500]);
-                start();
-              } else {
-//                Vibration.vibrate(pattern: [100, 100, 100, 100]);
-                stop();
-              }
-            },
-            label:
-                _isListening ? 'Listening...' : 'Listen (${selectedLang.code})',
-          ));
-        } else
-          return Scaffold();
-      },
-    );
-  }
-
-  List<CheckedPopupMenuItem<Language>> get _buildLanguagesWidgets => languages
-      .map((l) => new CheckedPopupMenuItem<Language>(
-            value: l,
-            checked: selectedLang == l,
-            child: new Text(l.name),
-          ))
-      .toList();
-
-  void _selectLangHandler(Language lang) {
-    setState(() => selectedLang = lang);
-  }
-
-  Widget _buildButton({String label, VoidCallback onPressed}) =>
+  Widget _buildButton({VoidCallback onPressed}) =>
       new InkWell(onTap: onPressed, child: showButton());
 
   Widget showButton() {
@@ -317,10 +258,10 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
-  void start() => _speech.activate(selectedLang.code).then((_) {
+  void startSpeechToText() => _speech.activate(selectedLang.code).then((_) {
         return _speech.listen().then((result) {
-          print('_SpeechToTextState.start => result $result');
-          _stop();
+          print('_SpeechToTextState.startSpeechToText => result $result');
+          _stopSpeak();
           setState(() {
             _isListening = result;
           });
@@ -384,11 +325,11 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  void changeRate(String rateValue) {
-    rateValue = correctString(rateValue);
+  void changeSpeed(String speedValue) {
+    speedValue = correctString(speedValue);
     setState(() {
       _needsToSpeak = false;
-      rate = double.parse(rateValue);
+      speed = double.parse(speedValue);
     });
   }
 
@@ -400,88 +341,46 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  //todo
-  dynamic chooseAction(String text) {
+  void chooseAction(String text) {
     List<String> words = text.split(' ');
-    if (words.length == 1) {
-      switch (text) {
-        case 'start':
-        case 'run':
-          return 'start';
-          break;
-        case 'stop':
-        case 'cancel':
-          return 'stop';
-          break;
-        case 'location':
-          {
-            searchLocation();
-            setState(() {
-              _needsToSpeak = true;
-            });
-            break;
-          }
-        default:
-          return null;
-          break;
-      }
-    } else if (words.length > 1) {
-      List<dynamic> settings;
-      switch (words[0]) {
-        case 'beach':
-          changePitch(words[words.length - 1]);
-          break;
-        case 'rate':
-        case 'speed':
-          changeRate(words[words.length - 1]);
-          break;
-        case 'volume':
-          changeVolume(words[words.length - 1]);
-          break;
-        case 'language':
-          changeVolume(words[words.length - 1]);
-          break;
-        default:
-          return null;
-          break;
-      }
-    }
-  }
-
-  void renderCommands(String text) {
-    switch (chooseAction(text)) {
+    switch (words[0]) {
       case 'start':
+      case 'run':
+      case 'play':
         setState(() {
           _needsToSpeak = true;
           locationSelected = null;
         });
         break;
       case 'stop':
+      case 'cancel':
         setState(() {
           _needsToSpeak = false;
           locationSelected = null;
         });
         break;
+      case 'location':
+        {
+          searchLocation();
+          setState(() {
+            _needsToSpeak = true;
+          });
+          break;
+        }
+      case 'pitch':
+        changePitch(words[words.length - 1]);
+        break;
+      case 'speed':
+      case 'speed':
+        changeSpeed(words[words.length - 1]);
+        break;
+      case 'volume':
+        changeVolume(words[words.length - 1]);
+        break;
       default:
+        return null;
         break;
     }
-  }
-
-  List<String> convertCoordinates(String oldCoordinates) {
-    List<String> newCoordinates = [];
-    int splitIndex;
-    for (int index = 0; index < oldCoordinates.length; index++) {
-      if (oldCoordinates[index] == '-') {
-        oldCoordinates = oldCoordinates.substring(0, index) +
-            '.' +
-            oldCoordinates.substring(index + 1);
-      } else if (oldCoordinates[index] == '+') {
-        splitIndex = index;
-      }
-    }
-    newCoordinates.add(oldCoordinates.substring(0, splitIndex));
-    newCoordinates.add(oldCoordinates.substring(splitIndex + 1));
-    return newCoordinates;
   }
 
   void searchLocation() {
@@ -493,7 +392,10 @@ class _SpeechToTextState extends State<SpeechToText> {
       mapOfMaps = Map.from(snapshot.value);
 
       mapOfMaps.forEach((key, value) async {
-        List<String> locationCoordinates = convertCoordinates(key);
+        ConvertCoordinates convertCoordinates =
+            new ConvertCoordinates(oldCoordinates: key);
+        List<String> locationCoordinates =
+            convertCoordinates.convertCoordinates();
         double distance = await _calculateDistance(
             double.parse(locationCoordinates[0]),
             double.parse(locationCoordinates[1]),
@@ -507,5 +409,48 @@ class _SpeechToTextState extends State<SpeechToText> {
         }
       });
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    chooseAction(transcription);
+
+    DatabaseReference dbRef;
+    if (locationSelected == null) {
+      dbRef = FirebaseDatabase.instance.reference().child(widget.path);
+    } else {
+      dbRef = FirebaseDatabase.instance
+          .reference()
+          .child('locations/' + locationSelected);
+    }
+
+    return StreamBuilder(
+      stream: dbRef.onValue,
+      builder: (context, snap) {
+        if (snap.hasData &&
+            !snap.hasError &&
+            snap.data.snapshot.value != null) {
+          Map data = snap.data.snapshot.value;
+
+          _chooseToSpeak(data, _needsToSpeak);
+
+          return new Scaffold(
+            body: _buildButton(
+              onPressed: () {
+                _getLocation();
+                if (_speechRecognitionAvailable && !_isListening) {
+                  Vibration.vibrate(pattern: [50, 200, 50, 200]);
+                  startSpeechToText();
+                } else {
+                  Vibration.vibrate(pattern: [50, 80, 50, 80]);
+                  stop();
+                }
+              },
+            ),
+          );
+        } else
+          return Loading();
+      },
+    );
   }
 }
