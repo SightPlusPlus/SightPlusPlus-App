@@ -41,7 +41,8 @@ class _SpeechToTextState extends State<SpeechToText> {
   bool _needsToSpeak = false;
   String setting;
   String newSetting;
-  Position _position;
+  double minDistance = double.infinity;
+  String locationSelected;
 
   FlutterTts flutterTts;
   String language;
@@ -74,22 +75,21 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   Coordinates coordinates;
 
-  _getLocation(double lat, double long) async {
+  _getLocation() async {
     Position position = await Geolocator()
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
-    final coordinates = new Coordinates(position.latitude, position.longitude);
-    print(coordinates);
-    double dist = await Geolocator().distanceBetween(
-        lat, long, coordinates.latitude, coordinates.longitude);
-    print("dist : $dist");
-    return (dist);
+    setState(() {
+      coordinates = new Coordinates(position.latitude, position.longitude);
+    });
   }
 
-  Future<dynamic> calculateDistance(
+  Future<dynamic> _calculateDistance(
       double lat, double long, Coordinates myCoordinates) async {
-    double dist = await Geolocator().distanceBetween(
-        lat, long, myCoordinates.latitude, myCoordinates.longitude);
-    return (dist);
+    if (myCoordinates != null) {
+      double dist = await Geolocator().distanceBetween(
+          lat, long, myCoordinates.latitude, myCoordinates.longitude);
+      return (dist);
+    }
   }
 
   @override
@@ -175,10 +175,10 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
-  Future _chooseToSpeak(String text, bool needsToSpeak) async {
+  Future _chooseToSpeak(Map data, bool needsToSpeak) async {
     if (needsToSpeak == true) {
       if (_isListening == false) {
-        _speak(text);
+        _speak(data['message']);
       }
     } else {
       _stop();
@@ -189,11 +189,6 @@ class _SpeechToTextState extends State<SpeechToText> {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
-
-//  Future _pause() async {
-//    var result = await flutterTts.pause();
-//    if (result == 1) setState(() => ttsState = TtsState.paused);
-//  }
 
   @override
   void dispose() {
@@ -217,11 +212,15 @@ class _SpeechToTextState extends State<SpeechToText> {
 
   @override
   Widget build(BuildContext context) {
-    DatabaseReference dbRef =
-        FirebaseDatabase.instance.reference().child(widget.path);
-    DatabaseReference locationRef =
-        FirebaseDatabase.instance.reference().child('locations');
+    DatabaseReference dbRef;
 
+    if (locationSelected == null) {
+      dbRef = FirebaseDatabase.instance.reference().child(widget.path);
+    } else {
+      dbRef = FirebaseDatabase.instance
+          .reference()
+          .child('locations/' + locationSelected);
+    }
     renderCommands(transcription);
 
     return StreamBuilder(
@@ -231,13 +230,14 @@ class _SpeechToTextState extends State<SpeechToText> {
             !snap.hasError &&
             snap.data.snapshot.value != null) {
           Map data = snap.data.snapshot.value;
+          print('......... $data');
 
-          _chooseToSpeak(data['name'] + data['distance'].toString() + 'meters',
-              _needsToSpeak);
+          _chooseToSpeak(data, _needsToSpeak);
 
           return new Scaffold(
               body: _buildButton(
             onPressed: () {
+              _getLocation();
               if (_speechRecognitionAvailable && !_isListening) {
 //                Vibration.vibrate(pattern: [100, 500, 100, 500]);
                 start();
@@ -250,7 +250,7 @@ class _SpeechToTextState extends State<SpeechToText> {
                 _isListening ? 'Listening...' : 'Listen (${selectedLang.code})',
           ));
         } else
-          return Text("No data"); //TODO apare si nu e bine
+          return Scaffold();
       },
     );
   }
@@ -415,8 +415,10 @@ class _SpeechToTextState extends State<SpeechToText> {
           break;
         case 'location':
           {
-            _getLocation(45, 23);
-
+            searchLocation();
+            setState(() {
+              _needsToSpeak = true;
+            });
             break;
           }
         default:
@@ -449,13 +451,61 @@ class _SpeechToTextState extends State<SpeechToText> {
   void renderCommands(String text) {
     switch (chooseAction(text)) {
       case 'start':
-        setState(() => _needsToSpeak = true);
+        setState(() {
+          _needsToSpeak = true;
+          locationSelected = null;
+        });
         break;
       case 'stop':
-        setState(() => _needsToSpeak = false);
+        setState(() {
+          _needsToSpeak = false;
+          locationSelected = null;
+        });
         break;
       default:
         break;
     }
+  }
+
+  List<String> convertCoordinates(String oldCoordinates) {
+    List<String> newCoordinates = [];
+    int splitIndex;
+    for (int index = 0; index < oldCoordinates.length; index++) {
+      if (oldCoordinates[index] == '-') {
+        oldCoordinates = oldCoordinates.substring(0, index) +
+            '.' +
+            oldCoordinates.substring(index + 1);
+      } else if (oldCoordinates[index] == '+') {
+        splitIndex = index;
+      }
+    }
+    newCoordinates.add(oldCoordinates.substring(0, splitIndex));
+    newCoordinates.add(oldCoordinates.substring(splitIndex + 1));
+    return newCoordinates;
+  }
+
+  void searchLocation() {
+    DatabaseReference locationRef =
+        FirebaseDatabase.instance.reference().child('locations');
+    Map<String, dynamic> mapOfMaps;
+
+    locationRef.once().then((DataSnapshot snapshot) {
+      mapOfMaps = Map.from(snapshot.value);
+
+      mapOfMaps.forEach((key, value) async {
+        List<String> locationCoordinates = convertCoordinates(key);
+        double distance = await _calculateDistance(
+            double.parse(locationCoordinates[0]),
+            double.parse(locationCoordinates[1]),
+            coordinates);
+
+        if (distance < minDistance) {
+          setState(() {
+            minDistance = distance;
+            locationSelected = key;
+          });
+        }
+      });
+    });
   }
 }
