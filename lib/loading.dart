@@ -37,7 +37,18 @@ class _LoadingState extends State<Loading> {
       });
     }
     return Scaffold(
-      backgroundColor: Colors.red,
+      backgroundColor: Colors.green[700],
+      body: Center(
+        child: SizedBox(
+          height: 150.0,
+          width: 150.0,
+          child: CircularProgressIndicator(
+            backgroundColor: Colors.white,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+            strokeWidth: 15,
+          ),
+        ),
+      ),
     );
   }
 }
