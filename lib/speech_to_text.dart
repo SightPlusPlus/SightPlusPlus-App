@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geocoder/geocoder.dart';
@@ -51,6 +53,8 @@ class _SpeechToTextState extends State<SpeechToText> {
   double volume = 0.5;
   double pitch = 0.8;
   double rate = 0.7;
+
+  static const audioPath = "beep.mp3";
 
   bool isCurrentLanguageInstalled = false;
 
@@ -153,8 +157,6 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  Future<dynamic> _getLanguages() => flutterTts.getLanguages;
-
   Future _getEngines() async {
     var engines = await flutterTts.getEngines;
     if (engines != null) {
@@ -180,6 +182,10 @@ class _SpeechToTextState extends State<SpeechToText> {
   Future _chooseToSpeak(Map data, bool needsToSpeak) async {
     if (needsToSpeak == true) {
       if (_isListening == false) {
+        if (data['priority'] == '4') {
+          Vibration.vibrate(pattern: [200, 50, 200, 50, 200, 50]);
+        }
+
         _speak(data['message']);
       }
     } else {
@@ -198,7 +204,7 @@ class _SpeechToTextState extends State<SpeechToText> {
     flutterTts.stop();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
+// Platform messages are asynchronous, so we initialize in an async method.
   void activateSpeechRecognizer() {
     print('_SpeechToTextState.activateSpeechRecognizer... ');
     _speech = new SpeechRecognition();
@@ -215,7 +221,6 @@ class _SpeechToTextState extends State<SpeechToText> {
   @override
   Widget build(BuildContext context) {
     DatabaseReference dbRef;
-
     if (locationSelected == null) {
       dbRef = FirebaseDatabase.instance.reference().child(widget.path);
     } else {
@@ -232,41 +237,25 @@ class _SpeechToTextState extends State<SpeechToText> {
             !snap.hasError &&
             snap.data.snapshot.value != null) {
           Map data = snap.data.snapshot.value;
-          print('......... $data');
 
           _chooseToSpeak(data, _needsToSpeak);
 
-          return new Scaffold(
-              body: _buildButton(
+          return new Scaffold(body: _buildButton(
             onPressed: () {
               _getLocation();
               if (_speechRecognitionAvailable && !_isListening) {
-//                Vibration.vibrate(pattern: [100, 500, 100, 500]);
+                Vibration.vibrate(pattern: [50, 200, 50, 200]);
                 start();
               } else {
-//                Vibration.vibrate(pattern: [100, 100, 100, 100]);
+                Vibration.vibrate(pattern: [50, 80, 50, 80]);
                 stop();
               }
             },
-            label:
-                _isListening ? 'Listening...' : 'Listen (${selectedLang.code})',
           ));
         } else
           return Loading();
       },
     );
-  }
-
-  List<CheckedPopupMenuItem<Language>> get _buildLanguagesWidgets => languages
-      .map((l) => new CheckedPopupMenuItem<Language>(
-            value: l,
-            checked: selectedLang == l,
-            child: new Text(l.name),
-          ))
-      .toList();
-
-  void _selectLangHandler(Language lang) {
-    setState(() => selectedLang = lang);
   }
 
   Widget _buildButton({String label, VoidCallback onPressed}) =>
@@ -402,7 +391,7 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  //todo
+//todo
   dynamic chooseAction(String text) {
     List<String> words = text.split(' ');
     if (words.length == 1) {
