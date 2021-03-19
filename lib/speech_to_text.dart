@@ -6,8 +6,8 @@ import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sight/loading.dart';
 import 'package:vibration/vibration.dart';
-import 'listen.dart';
 
 const languages = const [
   const Language('English', 'en_US'),
@@ -32,6 +32,8 @@ class SpeechToText extends StatefulWidget {
   @override
   _SpeechToTextState createState() => new _SpeechToTextState();
 }
+
+enum TtsState { playing, stopped, paused, continued }
 
 class _SpeechToTextState extends State<SpeechToText> {
   SpeechRecognition _speech;
@@ -250,7 +252,7 @@ class _SpeechToTextState extends State<SpeechToText> {
                 _isListening ? 'Listening...' : 'Listen (${selectedLang.code})',
           ));
         } else
-          return Scaffold();
+          return Loading();
       },
     );
   }
