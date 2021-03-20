@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 
 class IPAddress {
+  ///Function that return the ip address
   static Future<String> getAddress() async {
     try {
       final url = Uri.parse('https://api.ipify.org/');
@@ -11,6 +12,8 @@ class IPAddress {
     }
   }
 
+  /// Function that gets the path to the database child
+  /// Returns the path
   static Future<String> getPath() async {
     String ipAddress = await getAddress();
 

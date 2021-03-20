@@ -1,10 +1,9 @@
-import 'package:firebase_database/firebase_database.dart';
-
 class ConvertCoordinates {
   String oldCoordinates;
 
   ConvertCoordinates({this.oldCoordinates});
 
+  /// Function that converts the coordinates from the database into real coordinates
   List<String> convertCoordinates() {
     List<String> newCoordinates = [];
     int splitIndex;
