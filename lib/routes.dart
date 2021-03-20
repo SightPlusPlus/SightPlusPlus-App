@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sight/custom_route.dart';
 import 'package:sight/ip_address.dart';
 import 'package:sight/loading.dart';
-import 'package:sight/speech_to_text.dart';
+import 'package:sight/system.dart';
+
+// Class for routing
 
 class Routing {
   static String path;

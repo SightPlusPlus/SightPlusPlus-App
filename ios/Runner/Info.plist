@@ -26,10 +26,6 @@
 	<string>LaunchScreen</string>
 	<key>NSAppTransportSecurity</key>
     <dict>
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    	    <string>Need BLE permission</string>
-    	    <key>NSBluetoothPeripheralUsageDescription</key>
-    	    <string>Need BLE permission</string>
     	    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     	    <string>Need Location permission</string>
     	    <key>NSLocationAlwaysUsageDescription</key>
@@ -37,6 +33,8 @@
     	    <key>NSLocationWhenInUseUsageDescription</key>
     	    <string>Need Location permission</string>
             <key>NSAllowsArbitraryLoads</key>
+             <key>NSMicrophoneUsageDescription</key>
+             <string>Always microphone use</string>
             <true/>
     </dict>
 	<key>UIMainStoryboardFile</key>

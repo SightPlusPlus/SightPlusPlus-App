@@ -212,6 +212,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.11.0"
+  permission:
+    dependency: "direct main"
+    description:
+      name: permission
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.7"
   plugin_platform_interface:
     dependency: transitive
     description:
@@ -238,13 +245,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
-  soundpool:
-    dependency: "direct main"
-    description:
-      name: soundpool
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.5.4"
   source_span:
     dependency: transitive
     description:
