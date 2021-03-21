@@ -9,6 +9,8 @@ import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sight/convert_coordinates.dart';
 import 'package:sight/loading.dart';
+import 'package:sight/models/record.dart';
+import 'package:sight/objects_db.dart';
 import 'package:vibration/vibration.dart';
 
 // Languages
@@ -193,6 +195,9 @@ class _SpeechToTextState extends State<SpeechToText> {
           Vibration.vibrate(pattern: [200, 50, 200, 50, 200, 50]);
         }
         _speak(data['message']);
+        Record record = new Record(
+            object: data['message'], time: '12', date: '0325', error: 'false');
+        _objectsDb.addToDb(record);
       }
     } else {
       _stopSpeak();
@@ -453,6 +458,8 @@ class _SpeechToTextState extends State<SpeechToText> {
       );
     }
   }
+
+  ObjectsDb _objectsDb = new ObjectsDb();
 
   @override
   Widget build(BuildContext context) {
