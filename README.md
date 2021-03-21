@@ -15,7 +15,6 @@ Examples of commands accepted (START/RUN, STOP, LOCATIONS, SPEED/RATE X (0.0 - 1
 
 ## Future work
 
-
 - Add new languages
 - Add new functionality such as navigation
 - Add video calling feature. The visually impaired person can call a friend or a relative to ask for help in recognizing an object.
