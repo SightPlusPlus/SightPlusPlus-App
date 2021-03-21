@@ -1,16 +1,21 @@
-# sight
+# SightPlusPLus - Flutter Application
 
-A new Flutter application.
+A flutter application designed for visually impaired people. It works alongside the Client and the Server. It uses voice commands and text to speech technologies to help the user control it as easily as possible. Works on both Android and iOS devices.
 
-## Getting Started
+## How it works
 
-This project is a starting point for a Flutter application.
+The user uses his/her voice to control the system. When any part of the screen is pressed, the system will start listening also giving haptic and acoustic feedback. When it's started, it reads data from the Firebase Realtime Database where the object the camera sees are stored and updated. The messages are read using a Text to Speech API. The system can run with multiple cameras, that can be either static or mobile. Moreover, it adds reports data to a SQLite local database (stored on the phone).
 
-A few resources to get you started if this is your first Flutter project:
+## How to use it
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+You need to download and start the [Server](https://github.com/SightPlusPlus/SightPlusPlus-Server) and the [Client](https://github.com/SightPlusPlus/SightPlusPlus-Client) systems.
+Download the APK (for Android) or the IPA (for iOS) and install it on your device. You can also download the code and run it on an emulator, or even emulate it on your own device. Now press the screen and tell the system to START, STOP, change SPEED (e.g SPEED 0.6), VOLUME or PITCH, turn on/off the VIBRATION or start the system for the static cameras(by staying location). Double-tap the screen to work that there was an error with the recognized object.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Examples of commands accepted (START/RUN, STOP, LOCATIONS, SPEED/RATE X (0.0 - 1.0), PITCH (0.5 - 2.0), VOLUME (0.0 - 0.5), VIBRATION ON/OFF).
+
+## Future work
+
+
+- Add new languages
+- Add new functionality such as navigation
+- Add video calling feature. The visually impaired person can call a friend or a relative to ask for help in recognizing an object.
