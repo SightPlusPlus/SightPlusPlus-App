@@ -7,8 +7,11 @@ import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:sight/convert_coordinates.dart';
 import 'package:sight/loading.dart';
+import 'package:sight/models/record.dart';
+import 'package:sight/objects_db.dart';
 import 'package:vibration/vibration.dart';
 
 // Languages
@@ -54,11 +57,15 @@ class _SpeechToTextState extends State<SpeechToText> {
   //  Changing the settings (volume, speed, pitch)
   String setting;
   String newSetting;
+  bool vibration = true;
 
   //  Initialization of the var needed for the location part
   double minDistance = double.infinity;
   String locationSelected;
   Coordinates coordinates;
+
+  String wasError = 'false';
+  ObjectsDb _objectsDb = new ObjectsDb();
 
   TtsState ttsState = TtsState.stopped;
 
@@ -183,16 +190,42 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
+  /// Function that adds a report into the SQLite database
+  ///
+  /// The report will contain:
+  /// [name] of the recognised object
+  /// [time] (hour) at which the object was recognised
+  /// [date] at which the object was recognised
+  /// [location] the location where the object was recognised
+  /// [error] a String that changes the value from 'false' to 'true'
+  /// when the user reports that the system made a mistake
+  void addReport(String name) {
+    var now = DateTime.now();
+    String time = DateFormat('kk:mm:ss').format(now);
+    String date = DateFormat('dd/MM/yyyy').format(now);
+    Record record = new Record(
+        object: name,
+        time: time,
+        date: date,
+        location: coordinates.toString(),
+        error: wasError);
+    _objectsDb.addToDb(record);
+  }
+
   /// Function that that chooses when the system needs to speak
+  ///
   /// [data] - contains the messages which can be spoken
   /// [needsToSpeak] - true when it's time for the system to speak, false otherwise
   Future _chooseToSpeak(Map data, bool needsToSpeak) async {
     if (needsToSpeak == true) {
       if (_isListening == false) {
         if (data['priority'] == '4') {
-          Vibration.vibrate(pattern: [200, 50, 200, 50, 200, 50]);
+          customVibration(duration: 50, error: false, warning: true);
         }
         _speak(data['message']);
+        if (data['name'] != null) {
+          addReport(data['name']);
+        }
       }
     } else {
       _stopSpeak();
@@ -279,7 +312,12 @@ class _SpeechToTextState extends State<SpeechToText> {
     setState(() => _isListening = false);
   }
 
-  void errorHandler() => activateSpeechRecognizer();
+  void errorHandler() {
+    setState(() {
+      _isListening = false;
+    });
+    activateSpeechRecognizer();
+  }
 
   /// Function that converts the literal value of numbers into digits
   /// Gets [value] (e.g. 'one')
@@ -327,6 +365,20 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
+  /// Function to update the preferences for the volume
+  /// Gets [volumeValue] and sets it as the new value of the volume
+  void changeVibration(String vibrationValue) {
+    if (vibrationValue == 'on') {
+      setState(() {
+        vibration = true;
+      });
+    } else if (vibrationValue == 'off' || vibrationValue == 'of') {
+      setState(() {
+        vibration = false;
+      });
+    }
+  }
+
   /// Function that decides what the system should do
   /// Allows the user to use more words for certain tasks (start/play/run)
   void chooseAction(String text) {
@@ -365,6 +417,9 @@ class _SpeechToTextState extends State<SpeechToText> {
       case 'volume':
         changeVolume(words[words.length - 1]);
         break;
+      case 'vibration':
+        changeVibration(words[words.length - 1]);
+        break;
       default:
         return null;
         break;
@@ -401,8 +456,34 @@ class _SpeechToTextState extends State<SpeechToText> {
   }
 
   /// Function that builds the button widget
-  Widget _buildButton({VoidCallback onPressed}) =>
-      new InkWell(onTap: onPressed, child: showButton());
+  Widget _buildButton({VoidCallback onPressed}) => new InkWell(
+      onTap: onPressed, child: showButton(), onDoubleTap: errorOccurred);
+
+  void errorOccurred() {
+    _getLocation();
+    customVibration(duration: 500, error: true, warning: false);
+    setState(() {
+      wasError = 'true';
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        wasError = 'false';
+      });
+    });
+  }
+
+  void customVibration({int duration, bool error, bool warning}) {
+    if (vibration) {
+      if (error) {
+        Vibration.vibrate(pattern: [50, duration, 50, duration, 50, duration]);
+      } else if (warning) {
+        Vibration.vibrate(
+            pattern: [200, duration, 200, duration, 200, duration]);
+      } else {
+        Vibration.vibrate(pattern: [50, duration, 50, duration]);
+      }
+    }
+  }
 
   /// Function that shows different states for the button
   /// It can be either green (when the system is now listening)
@@ -410,7 +491,7 @@ class _SpeechToTextState extends State<SpeechToText> {
   Widget showButton() {
     if (_isListening == false) {
       return new Container(
-        color: Colors.green[700],
+        color: wasError == 'false' ? Colors.green[700] : Colors.black,
         child: Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -483,10 +564,10 @@ class _SpeechToTextState extends State<SpeechToText> {
               onPressed: () {
                 _getLocation();
                 if (_speechRecognitionAvailable && !_isListening) {
-                  Vibration.vibrate(pattern: [50, 200, 50, 200]);
+                  customVibration(duration: 200, error: false, warning: false);
                   startSpeechToText();
                 } else {
-                  Vibration.vibrate(pattern: [50, 80, 50, 80]);
+                  customVibration(duration: 80, error: false, warning: false);
                   stop();
                 }
               },
