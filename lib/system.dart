@@ -64,6 +64,7 @@ class _SpeechToTextState extends State<SpeechToText> {
   String locationSelected;
   Coordinates coordinates;
 
+  // Initialization  for SQLite Reports database
   bool _isRemote;
   String wasError = 'false';
   ObjectsDb _objectsDb = new ObjectsDb();
@@ -367,8 +368,8 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
-  /// Function to update the preferences for the volume
-  /// Gets [volumeValue] and sets it as the new value of the volume
+  /// Function to update switches the vibration on and off
+  /// Gets [vibrationValue] and decides if the user wants to use vibration or not
   void changeVibration(String vibrationValue) {
     if (vibrationValue == 'on') {
       setState(() {
@@ -464,19 +465,21 @@ class _SpeechToTextState extends State<SpeechToText> {
       onTap: onPressed, child: showButton(), onDoubleTap: errorOccurred);
 
   void errorOccurred() {
-    _getLocation();
-    customVibration(duration: 500, error: true, warning: false);
-    setState(() {
-      wasError = 'true';
-    });
-    Future.delayed(const Duration(seconds: 2), () {
+    if (!_isListening) {
+      _getLocation();
+      customVibration(duration: 500, error: true, warning: false);
       setState(() {
-        wasError = 'false';
+        wasError = 'true';
       });
-    });
+      Future.delayed(const Duration(seconds: 2), () {
+        setState(() {
+          wasError = 'false';
+        });
+      });
+    }
   }
 
-  /// Function that turns vibration on/off
+  /// Function for a custom vibration pattern
   void customVibration({int duration, bool error, bool warning}) {
     if (vibration) {
       if (error) {
@@ -508,7 +511,7 @@ class _SpeechToTextState extends State<SpeechToText> {
                 color: Colors.white,
               ),
               Text(
-                "Tap to Listen",
+                wasError == 'false' ? "Tap to Listen" : 'Error reported!',
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 50.0,

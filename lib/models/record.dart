@@ -1,3 +1,4 @@
+/// Model class for records
 class Record {
   final String object;
   final String date;

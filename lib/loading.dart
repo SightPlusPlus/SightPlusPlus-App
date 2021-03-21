@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:sight/ip_address.dart';
 
-// Screen to be shown while the system is initializing
+/// Screen to be shown while the system is initializing
 
 class Loading extends StatefulWidget {
   @override
