@@ -22,7 +22,7 @@ class ObjectsDb {
       // When the database is first created, create a table to store dogs.
       onCreate: (db, version) {
         return db.execute(
-          "CREATE TABLE records(object TEXT, time TEXT, date TEXT, location TEXT, error TEXT)",
+          "CREATE TABLE records(object TEXT, time TEXT, date TEXT, location TEXT, error TEXT, remote TEXT)",
         );
       },
       // Set the version. This executes the onCreate function and provides a
@@ -59,6 +59,7 @@ class ObjectsDb {
           date: maps[i]['date'],
           location: maps[i]['location'],
           error: maps[i]['error'],
+          remote: maps[i]['remote'],
         );
       });
     }

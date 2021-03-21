@@ -4,8 +4,15 @@ class Record {
   final String time;
   final String location;
   final String error;
+  final String remote;
 
-  Record({this.object, this.time, this.date, this.location, this.error});
+  Record(
+      {this.object,
+      this.time,
+      this.date,
+      this.location,
+      this.error,
+      this.remote});
 
   Map<String, dynamic> toMap() {
     return {
@@ -14,6 +21,7 @@ class Record {
       'date': date,
       'location': location,
       'error': error,
+      'remote': remote,
     };
   }
 }
