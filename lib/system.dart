@@ -64,6 +64,7 @@ class _SpeechToTextState extends State<SpeechToText> {
   String locationSelected;
   Coordinates coordinates;
 
+  bool _isRemote;
   String wasError = 'false';
   ObjectsDb _objectsDb = new ObjectsDb();
 
@@ -199,6 +200,8 @@ class _SpeechToTextState extends State<SpeechToText> {
   /// [location] the location where the object was recognised
   /// [error] a String that changes the value from 'false' to 'true'
   /// when the user reports that the system made a mistake
+  /// [remote] 'true' is the system is working with remote cameras or
+  /// 'false' if it's working with remote cameras
   void addReport(String name) {
     var now = DateTime.now();
     String time = DateFormat('kk:mm:ss').format(now);
@@ -208,7 +211,8 @@ class _SpeechToTextState extends State<SpeechToText> {
         time: time,
         date: date,
         location: coordinates.toString(),
-        error: wasError);
+        error: wasError,
+        remote: _isRemote.toString());
     _objectsDb.addToDb(record);
   }
 
@@ -223,9 +227,7 @@ class _SpeechToTextState extends State<SpeechToText> {
           customVibration(duration: 50, error: false, warning: true);
         }
         _speak(data['message']);
-        if (data['name'] != null) {
-          addReport(data['name']);
-        }
+        addReport(data['name']);
       }
     } else {
       _stopSpeak();
@@ -388,6 +390,7 @@ class _SpeechToTextState extends State<SpeechToText> {
       case 'run':
       case 'play':
         setState(() {
+          _isRemote = true;
           _needsToSpeak = true;
           locationSelected = null;
         });
@@ -401,6 +404,7 @@ class _SpeechToTextState extends State<SpeechToText> {
         break;
       case 'location':
         {
+          _isRemote = false;
           searchLocation();
           setState(() {
             _needsToSpeak = true;
@@ -472,6 +476,7 @@ class _SpeechToTextState extends State<SpeechToText> {
     });
   }
 
+  /// Function that turns vibration on/off
   void customVibration({int duration, bool error, bool warning}) {
     if (vibration) {
       if (error) {
