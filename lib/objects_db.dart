@@ -64,16 +64,5 @@ class ObjectsDb {
     }
 
     await insertRecord(record);
-
-    // Print the list of dogs (only Fido for now).
-    print(await records());
-
-    // Update Fido's age and save it to the database.
-//    fido = Record(
-//      id: fido.id,
-//      name: fido.name,
-//      age: fido.age + 7,
-//    );
-//    await updateDog(fido);
   }
 }
