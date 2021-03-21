@@ -22,7 +22,7 @@ class ObjectsDb {
       // When the database is first created, create a table to store dogs.
       onCreate: (db, version) {
         return db.execute(
-          "CREATE TABLE records(object TEXT, time TEXT, date TEXT, error TEXT)",
+          "CREATE TABLE records(object TEXT, time TEXT, date TEXT, location TEXT, error TEXT)",
         );
       },
       // Set the version. This executes the onCreate function and provides a
@@ -40,7 +40,7 @@ class ObjectsDb {
       await db.insert(
         'records',
         record.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.ignore,
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
 
@@ -54,9 +54,10 @@ class ObjectsDb {
       // Convert the List<Map<String, dynamic> into a List<Record>.
       return List.generate(maps.length, (i) {
         return Record(
-          object: maps[i]['object'],
+          object: maps[i]['name'],
           time: maps[i]['time'],
           date: maps[i]['date'],
+          location: maps[i]['location'],
           error: maps[i]['error'],
         );
       });

@@ -7,6 +7,7 @@ import 'package:flutter_speech/flutter_speech.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:sight/convert_coordinates.dart';
 import 'package:sight/loading.dart';
 import 'package:sight/models/record.dart';
@@ -61,6 +62,9 @@ class _SpeechToTextState extends State<SpeechToText> {
   double minDistance = double.infinity;
   String locationSelected;
   Coordinates coordinates;
+
+  String wasError = 'false';
+  ObjectsDb _objectsDb = new ObjectsDb();
 
   TtsState ttsState = TtsState.stopped;
 
@@ -185,7 +189,31 @@ class _SpeechToTextState extends State<SpeechToText> {
     }
   }
 
+  /// Function that adds a report into the SQLite database
+  ///
+  /// The report will contain:
+  /// [name] of the recognised object
+  /// [time] (hour) at which the object was recognised
+  /// [date] at which the object was recognised
+  /// [error] a String that changes the value from 'false' to 'true'
+  /// when the user reports that the system made a mistake
+  /// [location] the location where the object was recognised
+  void addReport(String name) {
+    var now = DateTime.now();
+    String time = DateFormat('kk:mm:ss').format(now);
+    String date = DateFormat('dd/MM/yyyy').format(now);
+
+    Record record = new Record(
+        object: name,
+        time: time,
+        date: date,
+        location: coordinates.toString(),
+        error: wasError);
+    _objectsDb.addToDb(record);
+  }
+
   /// Function that that chooses when the system needs to speak
+  ///
   /// [data] - contains the messages which can be spoken
   /// [needsToSpeak] - true when it's time for the system to speak, false otherwise
   Future _chooseToSpeak(Map data, bool needsToSpeak) async {
@@ -195,9 +223,7 @@ class _SpeechToTextState extends State<SpeechToText> {
           Vibration.vibrate(pattern: [200, 50, 200, 50, 200, 50]);
         }
         _speak(data['message']);
-        Record record = new Record(
-            object: data['message'], time: '12', date: '0325', error: 'false');
-        _objectsDb.addToDb(record);
+        addReport(data['name']);
       }
     } else {
       _stopSpeak();
@@ -406,8 +432,20 @@ class _SpeechToTextState extends State<SpeechToText> {
   }
 
   /// Function that builds the button widget
-  Widget _buildButton({VoidCallback onPressed}) =>
-      new InkWell(onTap: onPressed, child: showButton());
+  Widget _buildButton({VoidCallback onPressed}) => new InkWell(
+      onTap: onPressed, child: showButton(), onDoubleTap: errorOccurred);
+
+  void errorOccurred() {
+    Vibration.vibrate(pattern: [50, 500, 50, 500, 50, 500]);
+    setState(() {
+      wasError = 'true';
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        wasError = 'false';
+      });
+    });
+  }
 
   /// Function that shows different states for the button
   /// It can be either green (when the system is now listening)
@@ -415,7 +453,7 @@ class _SpeechToTextState extends State<SpeechToText> {
   Widget showButton() {
     if (_isListening == false) {
       return new Container(
-        color: Colors.green[700],
+        color: wasError == 'false' ? Colors.green[700] : Colors.black,
         child: Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -458,8 +496,6 @@ class _SpeechToTextState extends State<SpeechToText> {
       );
     }
   }
-
-  ObjectsDb _objectsDb = new ObjectsDb();
 
   @override
   Widget build(BuildContext context) {
