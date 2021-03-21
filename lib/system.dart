@@ -465,16 +465,18 @@ class _SpeechToTextState extends State<SpeechToText> {
       onTap: onPressed, child: showButton(), onDoubleTap: errorOccurred);
 
   void errorOccurred() {
-    _getLocation();
-    customVibration(duration: 500, error: true, warning: false);
-    setState(() {
-      wasError = 'true';
-    });
-    Future.delayed(const Duration(seconds: 2), () {
+    if (!_isListening) {
+      _getLocation();
+      customVibration(duration: 500, error: true, warning: false);
       setState(() {
-        wasError = 'false';
+        wasError = 'true';
       });
-    });
+      Future.delayed(const Duration(seconds: 2), () {
+        setState(() {
+          wasError = 'false';
+        });
+      });
+    }
   }
 
   /// Function for a custom vibration pattern
@@ -509,7 +511,7 @@ class _SpeechToTextState extends State<SpeechToText> {
                 color: Colors.white,
               ),
               Text(
-                "Tap to Listen",
+                wasError == 'false' ? "Tap to Listen" : 'Error reported!',
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 50.0,
