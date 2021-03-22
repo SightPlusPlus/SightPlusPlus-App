@@ -505,11 +505,13 @@ class _SpeechToTextState extends State<SpeechToText> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.play_circle_outline,
-                size: 70,
-                color: Colors.white,
-              ),
+              wasError == 'true'
+                  ? SizedBox()
+                  : Icon(
+                      Icons.play_circle_outline,
+                      size: 70,
+                      color: Colors.white,
+                    ),
               Text(
                 wasError == 'false' ? "Tap to Listen" : 'Error reported!',
                 style: const TextStyle(
