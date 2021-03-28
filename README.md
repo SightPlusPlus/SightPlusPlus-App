@@ -36,7 +36,7 @@ Turns vibration on and off.
 - Add new languages
 - Add new functionality such as navigation
 - Add video calling feature. The visually impaired person can call a friend or a relative to ask for help in recognizing an object.
-NOTE: The client and the app are both using Firebase. The credentials should be changed.
+- NOTE: The client and the app are both using Firebase. The credentials should be changed.
 
 ## Related APIs
 
