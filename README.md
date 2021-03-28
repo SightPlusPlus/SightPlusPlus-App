@@ -2,6 +2,10 @@
 
 A flutter application designed for visually impaired people. It works alongside the Client and the Server. It uses voice commands and text to speech technologies to help the user control it as easily as possible. Works on both Android and iOS devices.
 
+## Link to APK
+
+https://liveuclac-my.sharepoint.com/:u:/g/personal/zcabvud_ucl_ac_uk/EQxxIyK-tgZPnFGgm_Zo7zIBs09yk71X4JQooh_0qJq0sg?e=9JUZe1
+
 ## How it works
 
 The user uses his/her voice to control the system. When any part of the screen is pressed, the system will start listening also giving haptic and acoustic feedback. When it's started, it reads data from the Firebase Realtime Database where the object the camera sees are stored and updated. The messages are read using a Text to Speech API. The system can run with multiple cameras, that can be either static or mobile. Moreover, it adds reports data to a SQLite local database (stored on the phone).
