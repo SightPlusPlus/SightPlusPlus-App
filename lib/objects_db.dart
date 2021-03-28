@@ -19,7 +19,7 @@ class ObjectsDb {
       // `path` package is best practice to ensure the path is correctly
       // constructed for each platform.
       join(await getDatabasesPath(), 'records_database.db'),
-      // When the database is first created, create a table to store dogs.
+      // When the database is first created, create a table to store records.
       onCreate: (db, version) {
         return db.execute(
           "CREATE TABLE records(object TEXT, time TEXT, date TEXT, location TEXT, error TEXT, remote TEXT)",
@@ -35,7 +35,7 @@ class ObjectsDb {
       final Database db = await database;
 
       // Insert the Record into the correct table. Also specify the
-      // `conflictAlgorithm`. In this case, if the same dog is inserted
+      // `conflictAlgorithm`. In this case, if the same record is inserted
       // multiple times, it replaces the previous data.
       await db.insert(
         'records',
