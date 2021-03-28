@@ -10,11 +10,40 @@ The user uses his/her voice to control the system. When any part of the screen i
 
 You need to download and start the [Server](https://github.com/SightPlusPlus/SightPlusPlus-Server) and the [Client](https://github.com/SightPlusPlus/SightPlusPlus-Client) systems.
 Download the APK (for Android) or the IPA (for iOS) and install it on your device. You can also download the code and run it on an emulator, or even emulate it on your own device. Now press the screen and tell the system to START, STOP, change SPEED (e.g SPEED 0.6), VOLUME or PITCH, turn on/off the VIBRATION or start the system for the static cameras(by staying location). Double-tap the screen to work that there was an error with the recognized object.
-
-Examples of commands accepted (START/RUN, STOP, LOCATIONS, SPEED/RATE X (0.0 - 1.0), PITCH (0.5 - 2.0), VOLUME (0.0 - 0.5), VIBRATION ON/OFF).
+#### To make the system listen, tap the screen. To make the system report an error, double tap the screen.
+## Examples of commands accepted:
+#### START/RUN
+Starts the remote system. Uses Text to Speech technologies to read messages from the database.
+#### STOP
+Stops any process.
+#### LOCATIONS
+Starts the static system.
+#### SPEED/RATE X (0.0 - 1.0)
+Changes the rate of speaking. Gets values from 0 to 1.
+#### PITCH (0.5 - 2.0)
+Changes the pitch of the speaking. Gets values from  0.5 to 2.
+#### VOLUME (0.0 - 0.5)
+Changes the volume of the speaking. Gets values from 0 to 1
+#### VIBRATION ON/OFF)
+Turns vibration on and off.
 
 ## Future work
 
 - Add new languages
 - Add new functionality such as navigation
 - Add video calling feature. The visually impaired person can call a friend or a relative to ask for help in recognizing an object.
+
+## Related APIs
+
++ [firebase](https://pub.dev/packages/firebase)
++ [firebase-core](https://pub.dev/packages/firebase_core)
++ [geolocatior](https://pub.dev/packages/geolocator)
++ [flutter_speech](https://pub.dev/packages/flutter_speech)
++ [firebase-database](https://pub.dev/packages/firebase_database)
++ [vibration](https://pub.dev/packages/vibration)
++ [flutter_tts_improved](https://pub.dev/packages/flutter_tts_improved)
++ [flutter_tts](https://pub.dev/packages/flutter_tts)
++ [geocoder](https://pub.dev/packages/geocoder)
++ [http](https://pub.dev/packages/http)
++ [sqflite](https://pub.dev/packages/sqflite)
++ [intl](https://pub.dev/packages/intl)
