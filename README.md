@@ -13,7 +13,7 @@ The user uses his/her voice to control the system. When any part of the screen i
 ## How to use it
 
 You need to download and start the [Server](https://github.com/SightPlusPlus/SightPlusPlus-Server) and the [Client](https://github.com/SightPlusPlus/SightPlusPlus-Client) systems.
-Download the APK (for Android) or the IPA (for iOS) and install it on your device. You can also download the code and run it on an emulator, or even emulate it on your own device. Now press the screen and tell the system to START, STOP, change SPEED (e.g SPEED 0.6), VOLUME or PITCH, turn on/off the VIBRATION or start the system for the static cameras(by staying location). Double-tap the screen to work that there was an error with the recognized object.
+Download the APK (for Android) or the IPA (for iOS) and install it on your device. You can also download the code and run it on an emulator, or even emulate it on your own device. Now press the screen and tell the system to START, STOP, change SPEED (e.g SPEED 0.6), VOLUME or PITCH, turn on/off the VIBRATION or start the system for the static cameras(by saying location). Double-tap the screen to warn that there was an error with the recognized object.
 #### To make the system listen, tap the screen. To make the system report an error, double tap the screen.
 ## Examples of commands accepted:
 #### START/RUN
