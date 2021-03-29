@@ -35,7 +35,8 @@ Turns vibration on and off.
 
 - You need to install the Flutter SDK. You can do it from here: https://flutter.dev/docs/get-started/install.
 - Now you need to set up an editor. We recommend using Android Studio, but it’s up to you.
-- You need to install the Flutter and Dart plugins. Now everything should work
+- You need to install the Flutter and Dart plugins. 
+- Get the dependencies. Now everything should work
 - If you need to create a new APK, just type in the terminal (make sure you are in the root folder) flutter build apk.
 
 ## Future work
